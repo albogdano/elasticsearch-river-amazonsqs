@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.erudika</groupId>
 	<artifactId>scoold-search</artifactId>
@@ -20,13 +20,13 @@
 		<repository>
 			<id>sonatype</id>
 			<url>http://oss.sonatype.org/content/repositories/releases/</url>
-		</repository>		
+		</repository>
 		<repository>
 			<id>openid4java</id>
 			<url>https://oss.sonatype.org/content/repositories/openid4java-snapshots/</url>
 		</repository>
 	</repositories>
-	
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
-			<version>0.18.7</version>
+			<version>0.19.1</version>
 		</dependency>
 	 <dependency>
 	  <groupId>org.codehaus.jackson</groupId>
@@ -65,7 +65,7 @@
 	  <version>1.9.2</version>
 	 </dependency>
 	</dependencies>
-	
+
 	<build>
 		<plugins>
 			<plugin>
@@ -105,8 +105,8 @@
 									</fileset>
                                 </copy>
 							</target>
-						</configuration>						
-					</execution>					
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
@@ -140,7 +140,7 @@
 					</includes>
                 </configuration>
             </plugin>
-		</plugins>		
+		</plugins>
 	</build>
     <packaging>jar</packaging>
 </project>
