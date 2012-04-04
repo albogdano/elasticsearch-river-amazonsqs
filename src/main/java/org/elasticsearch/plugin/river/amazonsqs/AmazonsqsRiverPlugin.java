@@ -41,9 +41,8 @@ public class AmazonsqsRiverPlugin extends AbstractPlugin {
         return "River AmazonSQS Plugin";
     }
 
-    @Override public void processModule(Module module) {
-        if (module instanceof RiversModule) {
-            ((RiversModule) module).registerRiver("amazonsqs", AmazonsqsRiverModule.class);
-        }
+    public void onModule(RiversModule module){
+        module.registerRiver("amazonsqs", AmazonsqsRiverModule.class);
     }
+
 }
