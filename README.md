@@ -6,6 +6,7 @@ The AWS SQS plugin uses Amazon's SQS as a river by pulling messages from a given
 Messages are in the format `{"_id": "123", "_index":"es_index_name", "_type": "es_data_type", "_data": {"key1":"value1"...}}`.
 
 If `_data` is missing the data with this id will be deleted from the index.
+
 If `_index` is missing the it will fallback to default index
 
 The fields `_id` and `_type` are required.
