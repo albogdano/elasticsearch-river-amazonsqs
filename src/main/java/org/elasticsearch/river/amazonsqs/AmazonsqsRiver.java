@@ -54,14 +54,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 	private final AmazonSQSAsyncClient sqs;
 	private final ObjectMapper mapper;
 	private final String INDEX;
-	private final String ACCESSKEY;
-	private final String SECRETKEY;
+	private final String ACCESS_KEY;
+	private final String SECRET_KEY;
 	private final String QUEUE_URL;
 	private final String REGION;
 	private final int MAX_MESSAGES;
-	private final int TIMEOUT;	// in seconds
+	private final int TIMEOUT_SECONDS;
 	private final int DEFAULT_MAX_MESSAGES = 10;
-	private final int DEFAULT_TIMEOUT = 10;	// in seconds
+	private final int DEFAULT_TIMEOUT_SECONDS = 10;
 	private final String DEFAULT_INDEX = "elasticsearch";
 	
 	private volatile boolean closed = false;
@@ -76,13 +76,13 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 		if (settings.settings().containsKey("amazonsqs")) {
 			Map<String, Object> sqsSettings = (Map<String, Object>) settings.settings().get("amazonsqs");
 			REGION = XContentMapValues.nodeStringValue(sqsSettings.get("region"), "null");
-			ACCESSKEY = XContentMapValues.nodeStringValue(sqsSettings.get("accesskey"), "null");
-			SECRETKEY = XContentMapValues.nodeStringValue(sqsSettings.get("secretkey"), "null");
+			ACCESS_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("access_key"), "null");
+			SECRET_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("secret_key"), "null");
 			QUEUE_URL = XContentMapValues.nodeStringValue(sqsSettings.get("queue_url"), "null");
 		} else {
 			REGION = settings.globalSettings().get("cloud.aws.region");
-			ACCESSKEY = settings.globalSettings().get("cloud.aws.access_key");
-			SECRETKEY = settings.globalSettings().get("cloud.aws.secret_key");
+			ACCESS_KEY = settings.globalSettings().get("cloud.aws.access_key");
+			SECRET_KEY = settings.globalSettings().get("cloud.aws.secret_key");
 			QUEUE_URL = settings.globalSettings().get("cloud.aws.sqs.queue_url");
 		}
 
@@ -90,14 +90,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
 			INDEX = XContentMapValues.nodeStringValue(indexSettings.get("index"), DEFAULT_INDEX);
 			MAX_MESSAGES = XContentMapValues.nodeIntegerValue(indexSettings.get("max_messages"), DEFAULT_MAX_MESSAGES);
-			TIMEOUT = XContentMapValues.nodeIntegerValue(indexSettings.get("timeout_seconds"), DEFAULT_TIMEOUT);
+			TIMEOUT_SECONDS = XContentMapValues.nodeIntegerValue(indexSettings.get("timeout_seconds"), DEFAULT_TIMEOUT_SECONDS);
 		} else {
 			INDEX = DEFAULT_INDEX;
 			MAX_MESSAGES = DEFAULT_MAX_MESSAGES;
-			TIMEOUT = DEFAULT_TIMEOUT;
+			TIMEOUT_SECONDS = DEFAULT_TIMEOUT_SECONDS;
 		}
 
-		sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESSKEY, SECRETKEY));
+		sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
 		sqs.setEndpoint("https://".concat(REGION).concat(".queue.amazonaws.com"));
 		mapper = new ObjectMapper();
 	}
@@ -131,7 +131,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			while (!closed) {
 				// pull messages from SQS
 				List<JsonNode> msgs = pullMessages();
-				int sleeptime = TIMEOUT * 1000;
+				int sleeptime = TIMEOUT_SECONDS * 1000;
 
 				try {
 					BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();

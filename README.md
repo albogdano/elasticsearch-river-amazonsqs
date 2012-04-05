@@ -31,8 +31,8 @@ Or use river configuration:
       "type": "amazonsqs",
       "amazonsqs": {
           "region": "AWS REGION",
-          "accesskey": "AWS ACCESS KEY",
-          "secretkey": "AWS SECRET KEY",
+          "access_key": "AWS ACCESS KEY",
+          "secret_key": "AWS SECRET KEY",
           "queue_url": "AWS QUEUE URL"
         },
         "index": {
