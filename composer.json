@@ -6,6 +6,11 @@
     },
     "require": {}
     "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "master": "1.0-dev"
+        }
+    }
 }
 
 
