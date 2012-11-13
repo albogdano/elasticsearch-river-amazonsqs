@@ -43,4 +43,4 @@ Or use river configuration:
 
     }'
 
-In order to install the plugin, simply run: `bin/plugin -install aleski/elasticsearch-river-amazonsqs/1.2`.
+In order to install the plugin, simply run: `bin/plugin -install ./plugin  -install AZielinski/elasticsearch-river-amazonsqs`
