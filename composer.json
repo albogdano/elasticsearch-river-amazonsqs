@@ -4,7 +4,6 @@
     "autoload": {
         "psr-0": { "": "src/" }
     },
-    "require": {}
     "minimum-stability": "dev",
     "extra": {
         "branch-alias": {
