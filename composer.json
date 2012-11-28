@@ -1,0 +1,15 @@
+{
+    "name": "azielinski/elasticsearch-river-amazonsqs",
+    "description": "Elasticsearch River for AmazonSQS",
+    "autoload": {
+        "psr-0": { "": "src/" }
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "master": "1.0-dev"
+        }
+    }
+}
+
+
