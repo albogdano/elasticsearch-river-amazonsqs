@@ -59,13 +59,13 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 	private final String QUEUE_URL;
 	private final String REGION;
 	private final int MAX_MESSAGES;
-	private final int TIMEOUT;      // in seconds
-	private final boolean SHOULD_THROTTLE;
+	private final int SLEEP;
+	private final int LONGPOLLING_INTERVAL;
 	private final boolean DEBUG;
 	private final int DEFAULT_MAX_MESSAGES = 10;
-	private final int DEFAULT_TIMEOUT = 10;	// in seconds
+	private final int DEFAULT_LONGPOLLING_INTERVAL = 20;	// in seconds
 	private final String DEFAULT_INDEX = "elasticsearch";
-    private final boolean DEFAULT_THROTTLE = true;
+    private final int DEFAULT_SLEEP = 60;
     private final boolean DEFAULT_DEBUG = false;
 	
 	private volatile boolean closed = false;
@@ -83,41 +83,47 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			ACCESS_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("access_key"), "null");
 			SECRET_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("secret_key"), "null");
 			QUEUE_URL = XContentMapValues.nodeStringValue(sqsSettings.get("queue_url"), "null");
+			SLEEP = XContentMapValues.nodeIntegerValue(sqsSettings.get("sleep"), DEFAULT_SLEEP);
+			LONGPOLLING_INTERVAL = XContentMapValues.nodeIntegerValue(sqsSettings.get("longpolling_interval"), DEFAULT_LONGPOLLING_INTERVAL);
+			DEBUG = XContentMapValues.nodeBooleanValue(sqsSettings.get("debug"), DEFAULT_DEBUG);
 		} else {
 			REGION = settings.globalSettings().get("cloud.aws.region");
 			ACCESS_KEY = settings.globalSettings().get("cloud.aws.access_key");
 			SECRET_KEY = settings.globalSettings().get("cloud.aws.secret_key");
 			QUEUE_URL = settings.globalSettings().get("cloud.aws.sqs.queue_url");
+			SLEEP = settings.globalSettings().getAsInt("cloud.aws.sqs.sleep", DEFAULT_SLEEP);
+			LONGPOLLING_INTERVAL = settings.globalSettings().getAsInt("cloud.aws.sqs.longpolling_interval", DEFAULT_LONGPOLLING_INTERVAL);
+			DEBUG = settings.globalSettings().getAsBoolean("cloud.aws.sqs.debug", DEFAULT_DEBUG);
 		}
-		SHOULD_THROTTLE = settings.globalSettings().getAsBoolean("cloud.aws.throttling", DEFAULT_THROTTLE);
-		DEBUG = settings.globalSettings().getAsBoolean("cloud.aws.debug", DEFAULT_DEBUG);
 
 		if (settings.settings().containsKey("index")) {
 			Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
 			INDEX = XContentMapValues.nodeStringValue(indexSettings.get("index"), DEFAULT_INDEX);
 			MAX_MESSAGES = XContentMapValues.nodeIntegerValue(indexSettings.get("max_messages"), DEFAULT_MAX_MESSAGES);
-			TIMEOUT = XContentMapValues.nodeIntegerValue(indexSettings.get("timeout_seconds"), DEFAULT_TIMEOUT);
 		} else {
 			INDEX = DEFAULT_INDEX;
 			MAX_MESSAGES = DEFAULT_MAX_MESSAGES;
-			TIMEOUT = DEFAULT_TIMEOUT;
 		}
 		
 		String endpoint = "https://sqs.".concat(REGION).concat(".amazonaws.com");
-		sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
+		if (ACCESS_KEY == null || ACCESS_KEY.trim().equals("") || ACCESS_KEY.equals("null")) {
+			sqs = new AmazonSQSAsyncClient();
+		} else {
+			sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
+		}
 		sqs.setEndpoint(endpoint);
 
 		if (DEBUG) {
-			logger.info("Setting AWS Credentials to: "
-				.concat("access_key(****").concat(ACCESS_KEY.substring(ACCESS_KEY.length() - 4)).concat(" length: ").concat(ACCESS_KEY.length() + "); ")
-				.concat("secret_key(****").concat(SECRET_KEY.substring(SECRET_KEY.length() - 4)).concat(SECRET_KEY.length() + "); ")
-				.concat("Endpoint: (").concat(endpoint).concat("); "));
+			logger.info("AWS Credentials: "
+				.concat("Access Key: ****").concat(ACCESS_KEY.substring(ACCESS_KEY.length() - 4)).concat(ACCESS_KEY.length() + " ")
+				.concat("Secret Key: ****").concat(SECRET_KEY.substring(SECRET_KEY.length() - 4)).concat(SECRET_KEY.length() + " ")
+				.concat("Endpoint: ").concat(endpoint));
 		}
 		mapper = new ObjectMapper();
 	}
 
 	public void start() {
-		logger.info("creating amazonsqs river using queue {} (reindex timeout: {}s)", QUEUE_URL, TIMEOUT);
+		logger.info("creating amazonsqs river using queue {} (long polling interval: {}s)", QUEUE_URL, LONGPOLLING_INTERVAL);
 		thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "amazonsqs_river").newThread(new Consumer());
 		thread.start();
 	}
@@ -141,16 +147,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			String type = null;	// document type
 			String indexName = null; // document index
 			Map<String, Object> data = null; // document data for indexing
-			int defaultSleeptime = TIMEOUT * 1000;
-			int sleeptime = defaultSleeptime;
+			int interval = (LONGPOLLING_INTERVAL < 0 || LONGPOLLING_INTERVAL > 20) ? 
+					DEFAULT_LONGPOLLING_INTERVAL : LONGPOLLING_INTERVAL;
 			
 			while (!closed) {
 				// pull messages from SQS
-				List<JsonNode> msgs = pullMessages();
-
-				if (DEBUG) {
-					logger.info("Scanning for messages...");
-				}
+				if (DEBUG) logger.info("Waiting {}s for messages...", interval);
+				
+				List<JsonNode> msgs = pullMessages(interval);
 
 				try {
 					BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -160,7 +164,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 
 							id = msg.get("_id").getTextValue();
 							type = msg.get("_type").getTextValue();
-//							//Support for dynamic indexes
+							//Support for dynamic indexes
 							indexName = msg.has("_index") ? msg.get("_index").getTextValue() : INDEX;
 
 							if (msg.has("_data")) {
@@ -172,77 +176,52 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 						}
 					}
 
-					// sleep less when there are lots of messages in queue
-					// sleep more when idle
-					if (bulkRequestBuilder.numberOfActions() > 0) {
-
+					if (bulkRequestBuilder.numberOfActions() > 0) {						
 						BulkResponse response = bulkRequestBuilder.execute().actionGet();
 						if (response.hasFailures()) {
 							logger.warn("Bulk operation completed with errors: "
 									+ response.buildFailureMessage());
 						}
-
-						if (SHOULD_THROTTLE){
-							if (bulkRequestBuilder.numberOfActions() > 0) {
-								// some tasks in queue => throttle up
-								sleeptime = 1000;
-							} else if (bulkRequestBuilder.numberOfActions() == MAX_MESSAGES) {
-								// many tasks in queue => throttle up more
-								sleeptime = 100;
-							}
-						} else {
-							sleeptime = defaultSleeptime;
-						}
-
 						idleCount = 0;
 					} else {
 						idleCount++;
-						// no tasks in queue => throttle down
-						if (SHOULD_THROTTLE) {
-							if (idleCount >= 3) {
-								sleeptime *= 10;
+						if (DEBUG) logger.info("No new messages. {}", idleCount);
+						// no tasks in queue => throttle down pull requests
+						if (SLEEP > 0 && idleCount >= 3) {
+							try {
+								if (DEBUG) logger.info("Queue is empty. Sleeping for {}s", interval);
+								Thread.sleep(SLEEP * 1000);
+							} catch (InterruptedException e) {
+								if (closed) {
+									if (DEBUG) logger.info("Done.");
+									break;
+								}
 							}
-						} else {
-							sleeptime = defaultSleeptime;
 						}
 					}
 				} catch (Exception e) {
 					logger.error("Bulk index operation failed {}", e);
 					continue;
 				}
-
-				try {
-					if (DEBUG) {
-						logger.info("Sleeping for {}ms", sleeptime);
-					}
-					Thread.sleep(sleeptime);
-				} catch (InterruptedException e) {
-					if (closed) {
-						if (DEBUG) {
-							logger.info("Scanning done.");
-						}
-						break;
-					}
-				}
 			}
 		}
 
-		private List<JsonNode> pullMessages() {
+		private List<JsonNode> pullMessages(int interval) {
 			List<JsonNode> msgs = new ArrayList<JsonNode>();
 
 			if (!isBlank(QUEUE_URL)) {
 				try {
 					ReceiveMessageRequest receiveReq = new ReceiveMessageRequest(QUEUE_URL);
 					receiveReq.setMaxNumberOfMessages(MAX_MESSAGES);
+					receiveReq.setWaitTimeSeconds(interval);
 					List<Message> list = sqs.receiveMessage(receiveReq).getMessages();
 
 					if (list != null && !list.isEmpty()) {
+						if (DEBUG) logger.info("Received {} messages from queue.", list.size());
 						for (Message message : list) {
-
 							if (!isBlank(message.getBody())) {
 								msgs.add(mapper.readTree(message.getBody()));
 							}
-
 							sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, message.getReceiptHandle()));
 						}
 					}
@@ -254,7 +233,6 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 					logger.error("Could not reach SQS. {}", ace.getMessage());
 				}
 			}
-
 			return msgs;
 		}
 

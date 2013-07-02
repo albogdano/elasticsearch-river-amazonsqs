@@ -1,7 +1,7 @@
 AWS SQS River Plugin for ElasticSearch
 ==================================
 
-The AWS SQS plugin uses Amazon's SQS as a river by pulling messages from a given queue. Right after a message is indexed it gets deleted from the queue.
+The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue. Right after a message is indexed it gets deleted from the queue.
 
 Messages are in the following JSON format:
 
@@ -18,7 +18,8 @@ If `_index` is missing it will fallback to the index that was initially configur
 
 The fields `_id` and `_type` are required.
 
-Throttling is used when the queue starts to fill up. If the river keeps getting zero messages, it slows down the requests.
+When the queue is empty the river will sleep for `sleep` seconds before sending a new request for messages to the queue.
+Long polling is done by the Amazon SQS client using the `waitTimeSeconds` attribute which is set to `longpolling_interval` _(must be between 0 and 20)_.
 
 To configure put this in your `elasticsearch.yml`:
 
@@ -26,10 +27,11 @@ To configure put this in your `elasticsearch.yml`:
     cloud.aws.access_key: AWS ACCESS KEY
     cloud.aws.secret_key: AWS SECRET KEY
     cloud.aws.sqs.queue_url: AWS QUEUE URL
-    cloud.aws.throttling: (true by default)
-    cloud.aws.debug: (false by default)
+    cloud.aws.sqs.debug: (false by default)
+    cloud.aws.sqs.sleep: (seconds)
+    cloud.aws.sqs.longpolling_interval: (seconds)
 
-Or use river configuration:
+Or use a river configuration like this:
 
     curl -XPUT 'localhost:9200/_river/my_sqs_river/_meta' -d '{
       "type": "amazonsqs",
@@ -37,14 +39,13 @@ Or use river configuration:
           "region": "AWS REGION",
           "access_key": "AWS ACCESS KEY",
           "secret_key": "AWS SECRET KEY",
-          "queue_url": "AWS QUEUE URL"
+          "queue_url": "AWS QUEUE URL",
+          "debug": false,
+          "sleep": 60,
+          "longpolling_interval": 20
         },
         "index": {
           "max_messages": 10,
-          "timeout_seconds": 10,
           "index": "es_index_name"
         }
-
     }'
-
-In order to install the plugin, simply run: `bin/plugin -install aleski/elasticsearch-river-amazonsqs/1.2.1`.
