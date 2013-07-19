@@ -1,4 +1,4 @@
-AWS SQS River Plugin for ElasticSearch
+AWS SQS River Plugin for ElasticSearch [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.png?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
 ==================================
 
 The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue. Right after a message is indexed it gets deleted from the queue.
