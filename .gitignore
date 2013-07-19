@@ -5,3 +5,4 @@
 target/**
 catalog.xml
 nbactions.xml
+nb-configuration.xml
