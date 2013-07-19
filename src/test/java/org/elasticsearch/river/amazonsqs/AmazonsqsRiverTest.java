@@ -6,12 +6,17 @@ package org.elasticsearch.river.amazonsqs;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.DeleteQueueRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.elasticmq.rest.sqs.SQSRestServer;
+import org.elasticmq.rest.sqs.SQSRestServerBuilder;
 import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -40,21 +45,22 @@ public class AmazonsqsRiverTest {
 	private static Client client;
 	private final static String messageTemplate = "{ \"_id\": \"#\", \"_index\": \"testindex1\", \"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
 	private int msgId = 1;
+	private static SQSRestServer sqsServer;
+	private static String queueURL;
+	private static String endpoint = "http://localhost:9324";
+//	private static String endpoint = "https://sqs.eu-west-1.amazonaws.com";
 	
 	public AmazonsqsRiverTest() {
 	}
 	
 	@BeforeClass
 	public static void setUpClass() throws Exception{
-		String endpoint = "https://sqs.eu-west-1.amazonaws.com";
-		if (System.getProperty("accesskey") == null || System.getProperty("secretkey") == null) {
-			Assert.fail("AWS credentials missing.");
-		}
-		if (System.getProperty("queueurl") == null) {
-			Assert.fail("AWS queue url missing.");
-		}
-		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey"), System.getProperty("secretkey")));
+		sqsServer = SQSRestServerBuilder.start();
+		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey", "x"), System.getProperty("secretkey", "x")));
 		sqs.setEndpoint(endpoint);
+		CreateQueueResult q = sqs.createQueue(new CreateQueueRequest().withQueueName("testq"));
+		queueURL = q.getQueueUrl();
+		
 		startElasticSearchDefaultInstance();
 	}
 	
@@ -67,9 +73,10 @@ public class AmazonsqsRiverTest {
 						field("type", "amazonsqs").				
 						startObject("amazonsqs").
 							field("region", "eu-west-1").
-							field("access_key", System.getProperty("accesskey", "none")).
-							field("secret_key", System.getProperty("secretkey", "none")).
-							field("queue_url", System.getProperty("queueurl", "none")).
+							field("endpoint", endpoint).
+							field("access_key", System.getProperty("accesskey", "x")).
+							field("secret_key", System.getProperty("secretkey", "x")).
+							field("queue_url", System.getProperty("queueurl", queueURL)).
 							field("debug", "true").					
 						endObject().
 					endObject()).execute().actionGet();
@@ -83,6 +90,8 @@ public class AmazonsqsRiverTest {
 
 	@AfterClass
 	public static void tearDownClass() throws Exception{
+		sqs.deleteQueue(new DeleteQueueRequest(queueURL));
+		sqsServer.stopAndWait();
 		stopElasticSearchInstance();
 	}
 	
@@ -126,7 +135,7 @@ public class AmazonsqsRiverTest {
 	
 	private void postMessageToQueue(String msgText) {
         try {
-			sqs.sendMessage(new SendMessageRequest(System.getProperty("queueurl"), msgText));
+			sqs.sendMessage(new SendMessageRequest(System.getProperty("queueurl", queueURL), msgText));
 		} catch (Exception e) {
 			Assert.fail("Failed to send the message."+e);
 		}
@@ -139,7 +148,7 @@ public class AmazonsqsRiverTest {
 			for (int i = 0; i < count; i++) {
 				entries.add(new SendMessageBatchRequestEntry(Integer.toString(i), generateMessage(null)));
 				if(++j > 9){
-					sqs.sendMessageBatch(new SendMessageBatchRequest(System.getProperty("queueurl")).withEntries(entries));
+					sqs.sendMessageBatch(new SendMessageBatchRequest(System.getProperty("queueurl", queueURL)).withEntries(entries));
 					entries.clear();
 					Thread.sleep(100);
 				}

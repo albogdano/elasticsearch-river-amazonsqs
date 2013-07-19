@@ -58,6 +58,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 	private final String SECRET_KEY;
 	private final String QUEUE_URL;
 	private final String REGION;
+	private final String ENDPOINT;
 	private final int MAX_MESSAGES;
 	private final int SLEEP;
 	private final int LONGPOLLING_INTERVAL;
@@ -80,6 +81,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 		if (settings.settings().containsKey("amazonsqs")) {
 			Map<String, Object> sqsSettings = (Map<String, Object>) settings.settings().get("amazonsqs");
 			REGION = XContentMapValues.nodeStringValue(sqsSettings.get("region"), "null");
+			ENDPOINT = XContentMapValues.nodeStringValue(sqsSettings.get("endpoint"), "null");
 			ACCESS_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("access_key"), "null");
 			SECRET_KEY = XContentMapValues.nodeStringValue(sqsSettings.get("secret_key"), "null");
 			QUEUE_URL = XContentMapValues.nodeStringValue(sqsSettings.get("queue_url"), "null");
@@ -88,6 +90,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			DEBUG = XContentMapValues.nodeBooleanValue(sqsSettings.get("debug"), DEFAULT_DEBUG);
 		} else {
 			REGION = settings.globalSettings().get("cloud.aws.region");
+			ENDPOINT = settings.globalSettings().get("cloud.aws.endpoint");
 			ACCESS_KEY = settings.globalSettings().get("cloud.aws.access_key");
 			SECRET_KEY = settings.globalSettings().get("cloud.aws.secret_key");
 			QUEUE_URL = settings.globalSettings().get("cloud.aws.sqs.queue_url");
@@ -105,18 +108,22 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			MAX_MESSAGES = DEFAULT_MAX_MESSAGES;
 		}
 		
-		String endpoint = "https://sqs.".concat(REGION).concat(".amazonaws.com");
-		if (ACCESS_KEY == null || ACCESS_KEY.trim().equals("") || ACCESS_KEY.equals("null")) {
+		if (ACCESS_KEY == null || ACCESS_KEY.trim().isEmpty() || ACCESS_KEY.equals("null")) {
 			sqs = new AmazonSQSAsyncClient();
 		} else {
 			sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
+		}
+		
+		String endpoint = ENDPOINT;
+		if(ENDPOINT == null || ENDPOINT.trim().isEmpty() || ENDPOINT.equals("null")){
+			endpoint = "https://sqs.".concat(REGION).concat(".amazonaws.com");
 		}
 		sqs.setEndpoint(endpoint);
 
 		if (DEBUG) {
 			logger.info("AWS Credentials: "
-				.concat("Access Key: ****").concat(ACCESS_KEY.substring(ACCESS_KEY.length() - 4)).concat(ACCESS_KEY.length() + " ")
-				.concat("Secret Key: ****").concat(SECRET_KEY.substring(SECRET_KEY.length() - 4)).concat(SECRET_KEY.length() + " ")
+				.concat("Access Key length: ").concat(ACCESS_KEY.length() + " ")
+				.concat("Secret Key length: ").concat(SECRET_KEY.length() + " ")
 				.concat("Endpoint: ").concat(endpoint));
 		}
 		mapper = new ObjectMapper();
