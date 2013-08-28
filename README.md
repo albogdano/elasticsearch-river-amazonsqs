@@ -49,3 +49,5 @@ Or use a river configuration like this:
           "index": "es_index_name"
         }
     }'
+    
+In order to install the plugin, simply run: `bin/plugin -i river-amazonsqs -u https://s3-eu-west-1.amazonaws.com/albogdano/river-amazonsqs.zip`.
