@@ -1,6 +1,19 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright 2013 Alex Bogdanovski <alex@erudika.com>.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can reach the author at: https://github.com/albogdano
  */
 package org.elasticsearch.river.amazonsqs;
 
@@ -17,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.elasticmq.rest.sqs.SQSRestServer;
 import org.elasticmq.rest.sqs.SQSRestServerBuilder;
-import org.elasticsearch.action.count.CountRequest;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
@@ -37,13 +49,14 @@ import org.junit.Test;
 
 /**
  *
- * @author Alex Bogdanovski <albogdano@me.com>
+ * @author Alex Bogdanovski <alex@erudika.com>
  */
 public class AmazonsqsRiverTest {
 	
 	private static AmazonSQSClient sqs;
 	private static Client client;
-	private final static String messageTemplate = "{ \"_id\": \"#\", \"_index\": \"testindex1\", \"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
+	private final static String messageTemplate = "{ \"_id\": \"#\", \"_index\": \"testindex1\", "
+			+ "\"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
 	private int msgId = 1;
 	private static SQSRestServer sqsServer;
 	private static String queueURL;
@@ -56,7 +69,8 @@ public class AmazonsqsRiverTest {
 	@BeforeClass
 	public static void setUpClass() throws Exception{
 		sqsServer = SQSRestServerBuilder.start();
-		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey", "x"), System.getProperty("secretkey", "x")));
+		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey", "x"), 
+				System.getProperty("secretkey", "x")));
 		sqs.setEndpoint(endpoint);
 		CreateQueueResult q = sqs.createQueue(new CreateQueueRequest().withQueueName("testq"));
 		queueURL = q.getQueueUrl();
@@ -84,7 +98,7 @@ public class AmazonsqsRiverTest {
 
 	private static void stopElasticSearchInstance() {
 		System.out.println("shutting down elasticsearch");
-		client.admin().cluster().prepareNodesShutdown().execute();
+//		client.admin().cluster().prepareNodesShutdown().execute().actionGet();
 		client.close();
 	}
 
@@ -127,7 +141,7 @@ public class AmazonsqsRiverTest {
 		
 		Thread.sleep(3000);
 		
-		CountResponse count = client.count(new CountRequest("testindex1").query(QueryBuilders.matchAllQuery())).actionGet();
+		CountResponse count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
 		long c = count.getCount();
 		Assert.assertEquals(11L, c);
 	}

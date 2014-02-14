@@ -5,13 +5,9 @@
 	<groupId>com.erudika</groupId>
 	<artifactId>elasticsearch-river-amazonsqs</artifactId>
 	<name>elasticsearch-river-amazonsqs</name>
-	<version>1.3</version>
+	<version>1.4.0</version>
 
 	<repositories>
-<!--		<repository>
-			<id>kungfu</id>
-			<url>http://maven.kungfuters.org/content/repositories/public/</url>
-		</repository>-->
 		<repository>
 			<id>softwaremill-releases</id>
 			<url>https://nexus.softwaremill.com/content/repositories/releases</url>
@@ -19,10 +15,6 @@
 		<repository>
 			<id>sonatype</id>
 			<url>http://oss.sonatype.org/content/repositories/releases/</url>
-		</repository>
-		<repository>
-			<id>openid4java</id>
-			<url>https://oss.sonatype.org/content/repositories/openid4java-snapshots/</url>
 		</repository>
 	</repositories>
 
@@ -40,7 +32,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
-			<version>1.4.7</version>
+			<version>1.7.1</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jackson-core-asl</artifactId>
@@ -56,27 +48,28 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
-			<version>0.90.2</version>
+			<version>1.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-mapper-asl</artifactId>
-			<version>1.9.12</version>
+			<version>1.9.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-core-asl</artifactId>
-			<version>1.9.12</version>
+			<version>1.9.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.elasticmq</groupId>
 			<artifactId>elasticmq-rest-sqs_2.10</artifactId>
 			<version>0.7.0</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.5</version>
+			<version>1.7.6</version>
 		</dependency>
 	</dependencies>
 
