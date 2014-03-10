@@ -119,10 +119,18 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 		sqs.setEndpoint(endpoint);
 
 		if (DEBUG) {
-			logger.info("AWS Credentials: "
-				.concat("Access Key length: ").concat(ACCESS_KEY.length() + " ")
-				.concat("Secret Key length: ").concat(SECRET_KEY.length() + " ")
-				.concat("Endpoint: ").concat(endpoint));
+			if (ACCESS_KEY == null || ACCESS_KEY.length() < 2 || SECRET_KEY == null || SECRET_KEY.length() < 2) {
+				logger.warn("AWS Credentials are not correct! "
+					.concat("Access Key: ").concat(ACCESS_KEY + " ")
+					.concat("Secret Key: ").concat(SECRET_KEY + " ")
+					.concat("Endpoint: ").concat(endpoint));
+				
+			} else {
+				logger.info("AWS Credentials: "
+					.concat("Access Key length: ").concat(ACCESS_KEY.length() + " ")
+					.concat("Secret Key length: ").concat(SECRET_KEY.length() + " ")
+					.concat("Endpoint: ").concat(endpoint));
+			}
 		}
 		mapper = new ObjectMapper();
 	}

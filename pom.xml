@@ -5,7 +5,7 @@
 	<groupId>com.erudika</groupId>
 	<artifactId>elasticsearch-river-amazonsqs</artifactId>
 	<name>elasticsearch-river-amazonsqs</name>
-	<version>1.4.0</version>
+	<version>1.4.1</version>
 
 	<repositories>
 		<repository>
@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
-			<version>1.7.1</version>
+			<version>1.7.3</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jackson-core-asl</artifactId>
@@ -48,7 +48,7 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
