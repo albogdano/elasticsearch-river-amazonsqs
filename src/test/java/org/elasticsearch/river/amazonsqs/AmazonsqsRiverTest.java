@@ -57,6 +57,10 @@ public class AmazonsqsRiverTest {
 	private static Client client;
 	private final static String messageTemplate = "{ \"_id\": \"#\", \"_index\": \"testindex1\", "
 			+ "\"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
+	private final static String messageTemplate2 = "{ \"_id\": 123, \"_index\": \"testindex1\", "
+			+ "\"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
+	private final static String messageTemplate3 = "{ \"_id\": #, \"_index\": \"testindex1\", "
+			+ "\"_type\": \"testtype1\"}";
 	private int msgId = 1;
 	private static SQSRestServer sqsServer;
 	private static String queueURL;
@@ -129,21 +133,45 @@ public class AmazonsqsRiverTest {
 		} catch (IndexMissingException idxExcp) { }
 
 		postMessageToQueue(generateMessage(1));
-
-		Thread.sleep(3000l);
+		Thread.sleep(3000);
 		
 		GetResponse resp = client.get(new GetRequest("testindex1", "testtype1", "1")).actionGet();
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
 		
-		Thread.sleep(3 * 1000);
+		postMessageToQueue(generateAnotherMessage(1));
+		Thread.sleep(2000);
+		
+		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
+		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
+		
+		Thread.sleep(1000);
 		
 		postMessagesToQueue(10);
-		
-		Thread.sleep(3000);
+		Thread.sleep(2000);
 		
 		CountResponse count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
 		long c = count.getCount();
-		Assert.assertEquals(11L, c);
+		Assert.assertEquals(12L, c);
+		
+		postMessageToQueue(generateDeleteMessage(1));
+		postMessageToQueue(generateDeleteMessage(2));
+		postMessageToQueue(generateDeleteMessage(3));
+		postMessageToQueue(generateDeleteMessage(4));
+		postMessageToQueue(generateDeleteMessage(5));
+		postMessageToQueue(generateDeleteMessage(6));
+		postMessageToQueue(generateDeleteMessage(7));
+		postMessageToQueue(generateDeleteMessage(8));
+		postMessageToQueue(generateDeleteMessage(9));
+		postMessageToQueue(generateDeleteMessage(10));
+		postMessageToQueue(generateDeleteMessage(11));
+		Thread.sleep(1000);
+		
+		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
+		count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
+		
+		c = count.getCount();
+		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
+		Assert.assertEquals(1L, c);		
 	}
 
 	
@@ -171,8 +199,16 @@ public class AmazonsqsRiverTest {
 			Assert.fail("Failed to send the message."+e);
 		}
 	}
-	
+
 	private String generateMessage(Integer i){
 		return messageTemplate.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
+	}
+	
+	private String generateAnotherMessage(Integer i){
+		return messageTemplate2.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
+	}
+	
+	private String generateDeleteMessage(Integer i){
+		return messageTemplate3.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
 	}
 }

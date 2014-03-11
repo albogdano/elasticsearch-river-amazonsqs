@@ -1,7 +1,8 @@
 AWS SQS River Plugin for ElasticSearch [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.png?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
 ==================================
 
-The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue. Right after a message is indexed it gets deleted from the queue.
+The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue. 
+Right after a message is indexed it gets deleted from the queue.
 
 Messages are in the following JSON format:
 
@@ -12,11 +13,15 @@ Messages are in the following JSON format:
       "_data": { "key1": "value1" ...}
     }
 
-If `_data` is missing the data with this id will be deleted from the index.
+If `_data` is missing the data with this id will be deleted from the index. 
+If this field is anything other than JSON object we discard it and treat the messages as a delete request.
 
-If `_index` is missing it will fallback to the index that was initially configured, otherwise the `_index` property overrides the default configuration and allows you to dynamically switch between indexes.
+If `_index` is missing it will fallback to the index that was initially configured, 
+otherwise the `_index` property overrides the default configuration and allows you to dynamically switch between indexes.
 
-The fields `_id` and `_type` are required.
+The fields `_id` and `_type` are required. 
+
+**Note:** if the `_id` field is an integer it will be converted to `String` because SQS doesn't convert integers to strings automatically.
 
 When the queue is empty the river will sleep for `sleep` seconds before sending a new request for messages to the queue.
 Long polling is done by the Amazon SQS client using the `waitTimeSeconds` attribute which is set to `longpolling_interval` _(must be between 0 and 20)_.

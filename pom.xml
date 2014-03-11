@@ -5,7 +5,7 @@
 	<groupId>com.erudika</groupId>
 	<artifactId>elasticsearch-river-amazonsqs</artifactId>
 	<name>elasticsearch-river-amazonsqs</name>
-	<version>1.4.1</version>
+	<version>1.4.2</version>
 
 	<repositories>
 		<repository>

@@ -174,13 +174,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 
 					for (JsonNode msg : msgs) {
 						if (msg.has("_id") && msg.has("_type")) {
-
-							id = msg.get("_id").getTextValue();
+							JsonNode idNode = msg.get("_id");
+							id = idNode.isNumber() ? idNode.getNumberValue().toString() : idNode.getTextValue();
 							type = msg.get("_type").getTextValue();
 							//Support for dynamic indexes
 							indexName = msg.has("_index") ? msg.get("_index").getTextValue() : INDEX;
 
-							if (msg.has("_data")) {
+							JsonNode dataNode = msg.get("_data");
+							if (dataNode != null && dataNode.isObject()) {
 								data = mapper.readValue(msg.get("_data"), new TypeReference<Map<String, Object>>() {});
 								bulkRequestBuilder.add(client.prepareIndex(indexName, type, id).setSource(data).request());
 							} else {
