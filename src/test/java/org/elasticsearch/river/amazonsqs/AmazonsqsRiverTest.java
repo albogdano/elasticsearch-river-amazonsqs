@@ -139,15 +139,15 @@ public class AmazonsqsRiverTest {
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
 		
 		postMessageToQueue(generateAnotherMessage(1));
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 		
 		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
 		
-		Thread.sleep(1000);
+		Thread.sleep(3000);
 		
 		postMessagesToQueue(10);
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 		
 		CountResponse count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
 		long c = count.getCount();
@@ -164,7 +164,7 @@ public class AmazonsqsRiverTest {
 		postMessageToQueue(generateDeleteMessage(9));
 		postMessageToQueue(generateDeleteMessage(10));
 		postMessageToQueue(generateDeleteMessage(11));
-		Thread.sleep(1000);
+		Thread.sleep(3000);
 		
 		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
 		count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
