@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Alex Bogdanovski <alex@erudika.com>.
+ * Copyright 2013 Alex Bogdanovski [alex@erudika.com].
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import org.junit.Test;
 
 /**
  *
- * @author Alex Bogdanovski <alex@erudika.com>
+ * @author Alex Bogdanovski [alex@erudika.com]
  */
 public class AmazonsqsRiverTest {
 	

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Alex Bogdanovski <alex@erudika.com>.
+ * Copyright 2013 Alex Bogdanovski [alex@erudika.com].
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.elasticsearch.river.RiversModule;
 import org.elasticsearch.river.amazonsqs.AmazonsqsRiverModule;
 
 /**
- * @author Alex Bogdanovski <alex@erudika.com>
+ * @author Alex Bogdanovski [alex@erudika.com]
  */
 public class AmazonsqsRiverPlugin extends AbstractPlugin {
 
