@@ -21,7 +21,8 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -232,12 +234,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 
 					if (list != null && !list.isEmpty()) {
 						if (DEBUG) logger.info("Received {} messages from queue.", list.size());
+            List<DeleteMessageBatchRequestEntry> deletionList = new ArrayList<DeleteMessageBatchRequestEntry>();
 						for (Message message : list) {
 							if (!isBlank(message.getBody())) {
 								msgs.add(mapper.readTree(message.getBody()));
 							}
-							sqs.deleteMessage(new DeleteMessageRequest(QUEUE_URL, message.getReceiptHandle()));
+              deletionList.add(new DeleteMessageBatchRequestEntry(UUID.randomUUID().toString(), message.getReceiptHandle()));
 						}
+            sqs.deleteMessageBatch(QUEUE_URL, deletionList);
 					}
 				} catch (IOException ex) {
 					logger.error(ex.getMessage());
