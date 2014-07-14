@@ -21,7 +21,6 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -68,7 +67,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 	private final String DEFAULT_INDEX = "elasticsearch";
     private final int DEFAULT_SLEEP = 60;
     private final boolean DEFAULT_DEBUG = false;
-	
+
 	private volatile boolean closed = false;
 	private volatile Thread thread;
 
@@ -107,13 +106,13 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			INDEX = DEFAULT_INDEX;
 			MAX_MESSAGES = DEFAULT_MAX_MESSAGES;
 		}
-		
+
 		if (ACCESS_KEY == null || ACCESS_KEY.trim().isEmpty() || ACCESS_KEY.equals("null")) {
 			sqs = new AmazonSQSAsyncClient();
 		} else {
 			sqs = new AmazonSQSAsyncClient(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
 		}
-		
+
 		String endpoint = ENDPOINT;
 		if(ENDPOINT == null || ENDPOINT.trim().isEmpty() || ENDPOINT.equals("null")){
 			endpoint = "https://sqs.".concat(REGION).concat(".amazonaws.com");
@@ -126,7 +125,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 					.concat("Access Key: ").concat(ACCESS_KEY + " ")
 					.concat("Secret Key: ").concat(SECRET_KEY + " ")
 					.concat("Endpoint: ").concat(endpoint));
-				
+
 			} else {
 				logger.info("AWS Credentials: "
 					.concat("Access Key length: ").concat(ACCESS_KEY.length() + " ")
@@ -162,13 +161,13 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			String type = null;	// document type
 			String indexName = null; // document index
 			Map<String, Object> data = null; // document data for indexing
-			int interval = (LONGPOLLING_INTERVAL < 0 || LONGPOLLING_INTERVAL > 20) ? 
+			int interval = (LONGPOLLING_INTERVAL < 0 || LONGPOLLING_INTERVAL > 20) ?
 					DEFAULT_LONGPOLLING_INTERVAL : LONGPOLLING_INTERVAL;
-			
+
 			while (!closed) {
 				// pull messages from SQS
 				if (DEBUG) logger.info("Waiting {}s for messages...", interval);
-				
+
 				List<JsonNode> msgs = pullMessages(interval);
 
 				try {
@@ -192,7 +191,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 						}
 					}
 
-					if (bulkRequestBuilder.numberOfActions() > 0) {						
+					if (bulkRequestBuilder.numberOfActions() > 0) {
 						BulkResponse response = bulkRequestBuilder.execute().actionGet();
 						if (response.hasFailures()) {
 							logger.warn("Bulk operation completed with errors: "
@@ -234,12 +233,13 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 
 					if (list != null && !list.isEmpty()) {
 						if (DEBUG) logger.info("Received {} messages from queue.", list.size());
-            List<DeleteMessageBatchRequestEntry> deletionList = new ArrayList<DeleteMessageBatchRequestEntry>();
+						List<DeleteMessageBatchRequestEntry> deletionList = new ArrayList<DeleteMessageBatchRequestEntry>();
 						for (Message message : list) {
 							if (!isBlank(message.getBody())) {
 								msgs.add(mapper.readTree(message.getBody()));
 							}
-              deletionList.add(new DeleteMessageBatchRequestEntry(UUID.randomUUID().toString(), message.getReceiptHandle()));
+							deletionList.add(new DeleteMessageBatchRequestEntry(UUID.randomUUID().toString(),
+									message.getReceiptHandle()));
 						}
             sqs.deleteMessageBatch(QUEUE_URL, deletionList);
 					}
