@@ -5,7 +5,7 @@
 	<groupId>com.erudika</groupId>
 	<artifactId>elasticsearch-river-amazonsqs</artifactId>
 	<name>elasticsearch-river-amazonsqs</name>
-	<version>1.4.2</version>
+	<version>1.5.0</version>
 
 	<repositories>
 		<repository>
@@ -20,6 +20,9 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<slf4jVer>1.7.7</slf4jVer>
+		<logbackVer>1.1.2</logbackVer>
+		<awsVer>1.9.7</awsVer>
 	</properties>
 
 	<dependencies>
@@ -31,14 +34,13 @@
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk</artifactId>
-			<version>1.9.7</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>jackson-core-asl</artifactId>
-					<groupId>org.codehaus.jackson</groupId>
-				</exclusion>
-			</exclusions>
+			<artifactId>aws-java-sdk-core</artifactId>
+			<version>${awsVer}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-sqs</artifactId>
+			<version>${awsVer}</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>
@@ -48,28 +50,44 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
-			<version>1.2.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-asl</artifactId>
-			<version>1.9.13</version>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-core-asl</artifactId>
-			<version>1.9.13</version>
+			<version>1.4.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.elasticmq</groupId>
-			<artifactId>elasticmq-rest-sqs_2.10</artifactId>
-			<version>0.7.0</version>
-			<scope>test</scope>
+			<artifactId>elasticmq-rest-sqs_2.11</artifactId>
+			<version>0.8.3</version>
+		</dependency>
+
+		<!-- LOGGING -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4jVer}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.6</version>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4jVer}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<version>${slf4jVer}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+			<version>${slf4jVer}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>${logbackVer}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logbackVer}</version>
 		</dependency>
 	</dependencies>
 

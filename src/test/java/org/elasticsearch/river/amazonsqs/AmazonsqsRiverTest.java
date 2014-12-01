@@ -52,50 +52,56 @@ import org.junit.Test;
  * @author Alex Bogdanovski [alex@erudika.com]
  */
 public class AmazonsqsRiverTest {
-	
+
 	private static AmazonSQSClient sqs;
 	private static Client client;
 	private final static String messageTemplate = "{ \"_id\": \"#\", \"_index\": \"testindex1\", "
 			+ "\"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
-	private final static String messageTemplate2 = "{ \"_id\": 123, \"_index\": \"testindex1\", "
+	private final static String messageTemplate2 = "{ \"_id\": \"123\", \"_index\": \"testindex1\", "
 			+ "\"_type\": \"testtype1\", \"_data\": { \"key#\": \"value#\" } }";
-	private final static String messageTemplate3 = "{ \"_id\": #, \"_index\": \"testindex1\", "
+	private final static String messageTemplate3 = "{ \"_id\": \"#\", \"_index\": \"testindex1\", "
 			+ "\"_type\": \"testtype1\"}";
 	private int msgId = 1;
 	private static SQSRestServer sqsServer;
 	private static String queueURL;
 	private static String endpoint = "http://localhost:9324";
 //	private static String endpoint = "https://sqs.eu-west-1.amazonaws.com";
-	
+
 	public AmazonsqsRiverTest() {
 	}
-	
+
 	@BeforeClass
 	public static void setUpClass() throws Exception{
-		sqsServer = SQSRestServerBuilder.start();
-		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey", "x"), 
+		sqsServer = SQSRestServerBuilder.withInterface("localhost").withPort(9324).start();
+		sqs = new AmazonSQSClient(new BasicAWSCredentials(System.getProperty("accesskey", "x"),
 				System.getProperty("secretkey", "x")));
 		sqs.setEndpoint(endpoint);
+		sqs.setServiceNameIntern("sqs");
 		CreateQueueResult q = sqs.createQueue(new CreateQueueRequest().withQueueName("testq"));
 		queueURL = q.getQueueUrl();
-		
+
 		startElasticSearchDefaultInstance();
 	}
-	
+
 	private static void startElasticSearchDefaultInstance() throws IOException {
-		Node node = NodeBuilder.nodeBuilder().settings(ImmutableSettings.settingsBuilder().put("gateway.type", "none")).node();
+		ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
+		settings.put("node.name", "aws-river-test");
+		settings.put("cluster.name", "aws-river-test");
+		settings.put("gateway.type", "none");
+
+		Node node = NodeBuilder.nodeBuilder().settings(settings).node();
 		client = node.client();
 		client.prepareIndex("_river", "test1", "_meta").
 				setSource(jsonBuilder().
 					startObject().
-						field("type", "amazonsqs").				
+						field("type", "amazonsqs").
 						startObject("amazonsqs").
 							field("region", "eu-west-1").
 							field("endpoint", endpoint).
 							field("access_key", System.getProperty("accesskey", "x")).
 							field("secret_key", System.getProperty("secretkey", "x")).
 							field("queue_url", System.getProperty("queueurl", queueURL)).
-							field("debug", "true").					
+							field("debug", "true").
 						endObject().
 					endObject()).execute().actionGet();
 	}
@@ -112,11 +118,11 @@ public class AmazonsqsRiverTest {
 		sqsServer.stopAndWait();
 		stopElasticSearchInstance();
 	}
-	
+
 	@Before
 	public void setUp() {
 	}
-	
+
 	@After
 	public void tearDown() {
 	}
@@ -134,25 +140,26 @@ public class AmazonsqsRiverTest {
 
 		postMessageToQueue(generateMessage(1));
 		Thread.sleep(3000);
-		
+
 		GetResponse resp = client.get(new GetRequest("testindex1", "testtype1", "1")).actionGet();
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
-		
+
 		postMessageToQueue(generateAnotherMessage(1));
 		Thread.sleep(3000);
-		
+
 		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
-		
+//		Assert.assertNull(resp.getSourceAsString());
+
 		Thread.sleep(3000);
-		
+
 		postMessagesToQueue(10);
 		Thread.sleep(3000);
-		
+
 		CountResponse count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
 		long c = count.getCount();
 		Assert.assertEquals(12L, c);
-		
+
 		postMessageToQueue(generateDeleteMessage(1));
 		postMessageToQueue(generateDeleteMessage(2));
 		postMessageToQueue(generateDeleteMessage(3));
@@ -165,16 +172,16 @@ public class AmazonsqsRiverTest {
 		postMessageToQueue(generateDeleteMessage(10));
 		postMessageToQueue(generateDeleteMessage(11));
 		Thread.sleep(3000);
-		
+
 		resp = client.get(new GetRequest("testindex1", "testtype1", "123")).actionGet();
 		count = client.prepareCount("testindex1").setQuery(QueryBuilders.matchAllQuery()).get();
-		
+
 		c = count.getCount();
 		Assert.assertEquals("{\"key1\":\"value1\"}", resp.getSourceAsString());
-		Assert.assertEquals(1L, c);		
+		Assert.assertEquals(1L, c);
 	}
 
-	
+
 	private void postMessageToQueue(String msgText) {
         try {
 			sqs.sendMessage(new SendMessageRequest(System.getProperty("queueurl", queueURL), msgText));
@@ -182,7 +189,7 @@ public class AmazonsqsRiverTest {
 			Assert.fail("Failed to send the message."+e);
 		}
 	}
-	
+
 	private void postMessagesToQueue(int count) {
         try {
 			List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
@@ -203,11 +210,11 @@ public class AmazonsqsRiverTest {
 	private String generateMessage(Integer i){
 		return messageTemplate.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
 	}
-	
+
 	private String generateAnotherMessage(Integer i){
 		return messageTemplate2.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
 	}
-	
+
 	private String generateDeleteMessage(Integer i){
 		return messageTemplate3.replaceAll("#", (i != null) ? i.toString() : Integer.toString(++msgId));
 	}

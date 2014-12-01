@@ -24,6 +24,10 @@ import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.elasticsearch.client.Client;
@@ -39,9 +43,6 @@ import org.elasticsearch.river.RiverSettings;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 
 /**
@@ -161,6 +162,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 			String type = null;	// document type
 			String indexName = null; // document index
 			Map<String, Object> data = null; // document data for indexing
+			ObjectReader dataReader = mapper.reader(new TypeReference<Map<String, Object>>() {});
 			int interval = (LONGPOLLING_INTERVAL < 0 || LONGPOLLING_INTERVAL > 20) ?
 					DEFAULT_LONGPOLLING_INTERVAL : LONGPOLLING_INTERVAL;
 
@@ -175,15 +177,14 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 
 					for (JsonNode msg : msgs) {
 						if (msg.has("_id") && msg.has("_type")) {
-							JsonNode idNode = msg.get("_id");
-							id = idNode.isNumber() ? idNode.getNumberValue().toString() : idNode.getTextValue();
-							type = msg.get("_type").getTextValue();
+							id = msg.get("_id").textValue();
+							type = msg.get("_type").textValue();
 							//Support for dynamic indexes
-							indexName = msg.has("_index") ? msg.get("_index").getTextValue() : INDEX;
+							indexName = msg.has("_index") ? msg.get("_index").textValue() : INDEX;
 
 							JsonNode dataNode = msg.get("_data");
 							if (dataNode != null && dataNode.isObject()) {
-								data = mapper.readValue(msg.get("_data"), new TypeReference<Map<String, Object>>() {});
+								data = dataReader.readValue(msg.get("_data"));
 								bulkRequestBuilder.add(client.prepareIndex(indexName, type, id).setSource(data).request());
 							} else {
 								bulkRequestBuilder.add(client.prepareDelete(indexName, type, id).request());
@@ -241,7 +242,7 @@ public class AmazonsqsRiver extends AbstractRiverComponent implements River {
 							deletionList.add(new DeleteMessageBatchRequestEntry(UUID.randomUUID().toString(),
 									message.getReceiptHandle()));
 						}
-            sqs.deleteMessageBatch(QUEUE_URL, deletionList);
+						sqs.deleteMessageBatch(QUEUE_URL, deletionList);
 					}
 				} catch (IOException ex) {
 					logger.error(ex.getMessage());
