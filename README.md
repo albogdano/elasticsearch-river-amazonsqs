@@ -1,8 +1,8 @@
 # AWS SQS River Plugin for ElasticSearch [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.svg?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
 
-> Works with ElasticSearch 1.0
+> Works with ElasticSearch 1.4
 
-The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue. 
+The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue.
 Right after a message is indexed it gets deleted from the queue.
 
 ## Installation
@@ -53,10 +53,10 @@ Messages are in the following JSON format:
       "_data": { "key1": "value1" ...}
     }
 
-- The fields `_id` and `_type` are required. 
-- If `_data` is missing the data with this id will be deleted from the index. 
+- The fields `_id` and `_type` are required.
+- If `_data` is missing the data with this id will be deleted from the index.
 - If `_data` is anything other than JSON object we discard it and treat the messages as a delete request.
-- If `_index` is missing it will fallback to the index that was initially configured, 
+- If `_index` is missing it will fallback to the index that was initially configured,
 otherwise the `_index` property overrides the default configuration and allows you to dynamically switch between indexes.
 - If `_id` is an integer it will be converted to `String` because SQS doesn't convert integers to strings automatically.
 - When the queue is empty the river will sleep for `sleep` seconds before sending a new request for messages to the queue.
