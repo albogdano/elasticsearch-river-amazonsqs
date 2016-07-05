@@ -1,11 +1,11 @@
 # AWS SQS River Plugin for Elasticsearch [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.svg?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
 
-> Works with Elasticsearch 1.4
+> :info: This plugin is now built into [Para](https://github.com/Erudika/para)
 
-> :warning: Rivers will be deprecated in Elasticsearch 1.5 - [learn more](https://www.elastic.co/blog/deprecating_rivers)
+> :warning: Rivers are now deprecated since Elasticsearch 1.5 - [learn more](https://www.elastic.co/blog/deprecating_rivers)
 
 The AWS SQS plugin uses Amazon's SQS as a river by long polling for messages from a given queue.
-Right after a message is indexed it gets deleted from the queue.
+Right after a message is indexed it gets deleted from the queue. This plugin works with Elasticsearch 1.4.
 
 ## Installation
 
