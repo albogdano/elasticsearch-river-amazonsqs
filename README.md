@@ -1,6 +1,6 @@
-# AWS SQS River Plugin for Elasticsearch [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.svg?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
+# AWS SQS River Plugin for Elasticsearch 1.4 [![Build Status](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs.svg?branch=master)](https://travis-ci.org/albogdano/elasticsearch-river-amazonsqs)
 
-> :information_source: This plugin is now built into [Para](https://github.com/Erudika/para)
+> :information_source: This plugin is now built into [Para](https://github.com/Erudika/para) and works with Elasticsearch 6+
 
 > :warning: Rivers are now deprecated since Elasticsearch 1.5 - [learn more](https://www.elastic.co/blog/deprecating_rivers)
 
